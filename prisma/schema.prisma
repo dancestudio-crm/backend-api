@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./__generated__"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URI")
+}
+
+model User {
+  id               String     @id @default(uuid())
+  email            String     @unique
+  name             String
+  password         String
+  createdUser      String     @map("created_user")
+  roles            UserRole[]
+  isBlocked        Boolean    @default(false) @map("is_blocked")
+  color            String     @default("#000000")
+  dateOfBirth      DateTime?  @map("date_of_birth")
+  phone            String?
+  shortDescription String?    @map("short_description")
+  photo            String?
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  groups           Group[]
+  clients          Client[]
+
+  @@map("users")
+}
+
+model Role {
+  id    String     @id @default(uuid())
+  name  RoleEnum   @unique
+  users UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  userId String @map("user_id")
+  roleId String @map("role_id")
+  user   User   @relation(fields: [userId], references: [id])
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("users_roles")
+}
+
+model GroupDirection {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  groups      Group[]
+
+  @@map("group_directions")
+}
+
+model Group {
+  id               String         @id @default(uuid())
+  name             String
+  color            String?        @default("#000000")
+  descriptions     String?
+  photo            String?
+  leadingTeacherId String         @map("leading_teacher_id")
+  leadingTeacher   User           @relation(fields: [leadingTeacherId], references: [id])
+  groupDirectionId String         @map("group_direction_id")
+  groupDirection   GroupDirection @relation(fields: [groupDirectionId], references: [id])
+  clients          Client[]
+
+  @@map("groups")
+}
+
+model Client {
+  id              String    @id @default(uuid())
+  fullName        String    @map("full_name")
+  phone           String?
+  telegram        String?
+  email           String?
+  dateOfBirth     DateTime? @map("date_of_birth")
+  createdByUserId String    @map("created_by_user_id")
+  createdByUser   User      @relation(fields: [createdByUserId], references: [id])
+  groupId         String    @map("group_id")
+  group           Group     @relation(fields: [groupId], references: [id])
+
+  // todo статус клиента нужно добавить, когда будет понимание какие нужны
+  @@map("clients")
+}
+
+enum RoleEnum {
+  OWNER
+  ADMINISTRATOR
+  MANAGER
+  TEACHER
+}
